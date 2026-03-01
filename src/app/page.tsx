@@ -1,65 +1,84 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { MultiStepLoader } from "@/components/ui/multi-step-loader";
+import Lanyard from "@/components/ui/lanyard";
+import RotatingText from "@/components/ui/rotating-text";
+import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
+
+const loadingStates = [
+  { text: "Sleep" },
+  { text: "Eat" },
+  { text: "Learn" },
+  { text: "Welcome to my Portofolio!" }
+];
 
 export default function Home() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Wait for the multi-step loader to cycle through all states (4 states * 800ms)
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="w-full h-full relative">
+      <MultiStepLoader loadingStates={loadingStates} loading={loading} duration={800} loop={false} />
+
+      {!loading && (
+        <div className="max-w-5xl mx-auto flex flex-col pb-20 pt-8 mt-16 lg:mt-0 animate-in fade-in duration-700 border-none">
+
+          {/* Hero / Intro Section */}
+          <section id="about" className="w-full relative min-h-[calc(100vh-8rem)] pb-8 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0 overflow-hidden bg-white rounded-lg">
+
+            {/* Integrated interactive ripple background */}
+            <div className="absolute inset-0 z-0">
+              <BackgroundRippleEffect />
+            </div>
+
+            {/* Background layer for Lanyard (mobile on top + desktop on right) */}
+            <div className="w-full h-80 md:h-auto md:w-1/2 relative z-50 flex items-center justify-center md:justify-end md:-mr-12 order-1 md:order-2 pointer-events-none">
+              <div className="pointer-events-auto w-full h-full">
+                <Lanyard position={[0, 0, 20]} gravity={[0, -40, 0]} />
+              </div>
+            </div>
+
+            <div className="w-full md:w-1/2 relative z-10 px-4 md:px-0 mt-4 md:mt-0 order-2 md:order-1">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-neutral-900 mb-6">
+                  <div className="mb-3">Hi there, I'm a</div>
+                  <div className="mt-2 text-3xl sm:text-4xl md:text-5xl">
+                    <RotatingText
+                      texts={['Learner', 'Player', 'Enjoyer', 'Developer']}
+                      mainClassName="px-2 sm:px-3 md:px-4 bg-neutral-900 text-white overflow-hidden py-1 sm:py-2 md:py-2 justify-center rounded-lg inline-flex"
+                      staggerFrom={"last"}
+                      initial={{ y: "100%" }}
+                      animate={{ y: 0 }}
+                      exit={{ y: "-120%" }}
+                      staggerDuration={0.025}
+                      splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+                      transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                      rotationInterval={2000}
+                    />
+                  </div>
+                </h2>
+                <p className="text-lg text-neutral-600 max-w-2xl leading-relaxed mt-8">
+                  I am a Full-stack Developer and Statistician specializing in creating functional web applications and IT infrastructure.
+                </p>
+              </motion.div>
+            </div>
+
+          </section>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      )}
     </div>
   );
 }
