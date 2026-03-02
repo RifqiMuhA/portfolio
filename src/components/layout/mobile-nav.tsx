@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Menu, X, Home, User, FlaskConical, Mail } from "lucide-react";
+import { Menu, X, Home, User, FlaskConical, MessageSquare } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { NoiseBackground } from "@/components/ui/noise-background";
 
@@ -11,7 +11,7 @@ const navItems = [
     { name: "Home", path: "/", icon: Home },
     { name: "About", path: "/about", icon: User },
     { name: "Projects", path: "/projects", icon: FlaskConical },
-    { name: "Contact", path: "/contact", icon: Mail },
+    { name: "Comments", path: "/comments", icon: MessageSquare },
 ];
 
 export function MobileNav() {

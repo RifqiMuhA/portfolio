@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Home, User, FlaskConical, Layers, Mail } from "lucide-react";
+import { Home, User, FlaskConical, Layers, MessageSquare } from "lucide-react";
 import Image from "next/image";
 import { NoiseBackground } from "@/components/ui/noise-background";
 
@@ -11,7 +11,7 @@ const navItems = [
     { name: "Home", path: "/", icon: Home },
     { name: "About", path: "/about", icon: User },
     { name: "Projects", path: "/projects", icon: FlaskConical },
-    { name: "Contact", path: "/contact", icon: Mail },
+    { name: "Comments", path: "/comments", icon: MessageSquare },
 ];
 
 export function Sidebar() {
