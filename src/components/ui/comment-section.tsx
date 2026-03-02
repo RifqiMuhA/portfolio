@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "@/utils/supabase/client";
 import { formatDistanceToNow } from "date-fns";
-import { User, MessageSquare, Send, Loader2 } from "lucide-react";
+import { Send, Loader2, CheckCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Comment = {
@@ -12,6 +12,46 @@ type Comment = {
     content: string;
     created_at: string;
 };
+
+// SVG Chat Background Pattern (WhatsApp-ish Doodle aesthetic)
+const ChatBackground = () => (
+    <div className="absolute inset-0 opacity-[0.03] pointer-events-none z-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+            <defs>
+                <pattern id="doodle" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+                    {/* Simplified modern chat doodles */}
+                    <path fill="currentColor" d="M11.6,24.3c-1.2-1.2-1.2-3.2,0-4.4c1.2-1.2,3.2-1.2,4.4,0c1.2,1.2,1.2,3.2,0,4.4C14.8,25.5,12.8,25.5,11.6,24.3z M25.8,11.6 c-1.2-1.2-1.2-3.2,0-4.4c1.2-1.2,3.2-1.2,4.4,0c1.2,1.2,1.2,3.2,0,4.4C29,12.8,27,12.8,25.8,11.6z M55.3,42.5 c-0.6-0.6-0.6-1.6,0-2.2c0.6-0.6,1.6-0.6,2.2,0c0.6,0.6,0.6,1.6,0,2.2C56.9,43.2,55.9,43.2,55.3,42.5z M85.2,13 c-0.8-0.8-0.8-2.1,0-2.9c0.8-0.8,2.1-0.8,2.9,0c0.8,0.8,0.8,2.1,0,2.9C87.3,13.8,86.1,13.8,85.2,13z M107.4,51.8 c-1.1-1.1-1.1-2.9,0-4c1.1-1.1,2.9-1.1,4,0c1.1,1.1,1.1,2.9,0,4C110.3,52.9,108.5,52.9,107.4,51.8z M23.3,77c-0.9-0.9-0.9-2.2,0-3.1 c0.9-0.9,2.2-0.9,3.1,0c0.9,0.9,0.9,2.2,0,3.1C25.5,77.9,24.1,77.9,23.3,77z M79.7,80.1c-1.3-1.3-1.3-3.3,0-4.6c1.3-1.3,3.3-1.3,4.6,0 c1.3,1.3,1.3,3.3,0,4.6C83,81.4,81,81.4,79.7,80.1z M52.5,99.9c-0.7-0.7-0.7-1.7,0-2.4c0.7-0.7,1.7-0.7,2.4,0c0.7,0.7,0.7,1.7,0,2.4 C54.2,100.5,53.1,100.5,52.5,99.9z M13,106.6c-0.8-0.8-0.8-2,0-2.8c0.8-0.8,2-0.8,2.8,0c0.8,0.8,0.8,2,0,2.8 C15,107.3,13.8,107.3,13,106.6z M102.3,95.5c-0.7-0.7-0.7-1.8,0-2.5c0.7-0.7,1.8-0.7,2.5,0c0.7,0.7,0.7,1.8,0,2.5 C104.1,96.3,103,96.3,102.3,95.5z M38.7,46.5v1.2h-6.2v17.2h6.2v1.2h-7.6V46.5H38.7z M70.3,51.7h-6.2v3.1h5.3v1h-5.3v4.4h6.2v1 h-7.6V50.7h7.6V51.7z" />
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#doodle)" />
+        </svg>
+    </div>
+);
+
+// Loading Skeleton Component
+const ChatSkeleton = () => (
+    <div className="flex flex-col gap-4 max-h-[600px] overflow-y-auto px-4 pb-4 no-scrollbar">
+        {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className={`flex w-full ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
+                <div className={`relative max-w-[85%] sm:max-w-[75%] p-3 rounded-2xl animate-pulse
+                    ${i % 2 === 0
+                        ? "bg-emerald-50 rounded-tr-none border border-emerald-100" // Sender
+                        : "bg-white rounded-tl-none border border-neutral-100" // Receiver
+                    }`}
+                >
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="w-16 h-3 rounded bg-neutral-200"></div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <div className={`h-4 rounded bg-neutral-200 ${i % 2 === 0 ? 'w-48' : 'w-64'}`}></div>
+                        <div className={`h-4 rounded bg-neutral-200 ${i % 2 === 0 ? 'w-32' : 'w-40'}`}></div>
+                    </div>
+                    <div className="absolute right-3 bottom-2 w-8 h-2 rounded bg-neutral-200"></div>
+                </div>
+            </div>
+        ))}
+    </div>
+);
 
 export default function CommentSection() {
     const [comments, setComments] = useState<Comment[]>([]);
@@ -24,6 +64,13 @@ export default function CommentSection() {
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Scroll to bottom helper
+    const scrollToBottom = () => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+    };
+
     // Initial Fetch & Subscription Setup
     useEffect(() => {
         fetchComments();
@@ -35,8 +82,9 @@ export default function CommentSection() {
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'comments' },
                 (payload) => {
-                    // Prepend the new comment to the state immediately
-                    setComments((current) => [payload.new as Comment, ...current]);
+                    // Append new comments to the BOTTOM 
+                    setComments((current) => [...current, payload.new as Comment]);
+                    setTimeout(scrollToBottom, 100);
                 }
             )
             .subscribe();
@@ -46,13 +94,21 @@ export default function CommentSection() {
         };
     }, []);
 
+    // Scroll down whenever messages load first time
+    useEffect(() => {
+        if (!isLoading) {
+            scrollToBottom();
+        }
+    }, [isLoading, comments.length]);
+
     const fetchComments = async () => {
         setIsLoading(true);
         try {
             const { data, error } = await supabase
                 .from('comments')
                 .select('*')
-                .order('created_at', { ascending: false });
+                // Order by ascending to make oldest at top, newest at bottom (like WhatsApp)
+                .order('created_at', { ascending: true });
 
             if (error) throw error;
             if (data) setComments(data);
@@ -82,159 +138,182 @@ export default function CommentSection() {
 
             if (error) throw error;
 
-            // Clear input on success (supabase realtime handles the list update)
+            // Clear ONLY message input on success so the user doesn't have to re-type their name
             setContent("");
 
         } catch (error) {
             console.error('Error submitting comment:', error);
-            alert("Gagal mengirim pesan. Silakan coba lagi.");
+            alert("Failed to send message. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // Helper to generate a consistent color based on username
-    const getAvatarColor = (name: string) => {
+    // Define consistent chat bubble colors dynamically based on username
+    const getNameColor = (name: string) => {
         const colors = [
-            "bg-blue-500", "bg-emerald-500", "bg-violet-500",
-            "bg-rose-500", "bg-amber-500", "bg-cyan-500"
+            "text-blue-500", "text-emerald-500", "text-violet-500",
+            "text-rose-500", "text-amber-500", "text-cyan-600"
         ];
         const index = name.charCodeAt(0) % colors.length;
         return colors[index];
     };
 
     return (
-        <div className="w-full max-w-4xl mx-auto flex flex-col md:flex-row gap-8 lg:gap-12">
+        <div className="w-full flex flex-col mx-auto bg-[#efeae2] sm:rounded-3xl shadow-xl border border-neutral-300 overflow-hidden relative" style={{ height: "calc(100vh - 12rem)", minHeight: "500px", maxHeight: "800px" }}>
 
-            {/* LEFT SIDE: Submit Form */}
-            <div className="w-full md:w-1/3 flex flex-col gap-6">
-                <div>
-                    <h3 className="text-2xl font-bold flex items-center gap-2 text-neutral-900 border-b border-neutral-100 pb-4">
-                        <MessageSquare className="w-6 h-6 text-neutral-400" />
-                        Tinggalkan Pesan
-                    </h3>
-                    <p className="text-sm text-neutral-500 mt-3">
-                        Punya pertanyaan atau sekadar ingin menyapa? Buku tamu ini bersifat publik dan real-time.
+            <ChatBackground />
+
+            {/* HEADER */}
+            <div className="bg-[#f0f2f5] px-6 py-4 flex items-center gap-4 border-b border-neutral-300 z-10 shrink-0 shadow-sm">
+                <div className="relative">
+                    <div className="w-12 h-12 rounded-full overflow-hidden border border-neutral-200 bg-white">
+                        <img src="/group.png" alt="Rifqi Muh" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-[#f0f2f5] rounded-full"></div>
+                </div>
+                <div className="flex flex-col">
+                    <h3 className="font-semibold text-neutral-900 leading-tight">Public Lounge</h3>
+                    <p className="text-xs text-neutral-500">
+                        {comments.length} participants • Live connection
                     </p>
                 </div>
-
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4 bg-white p-6 rounded-2xl shadow-sm border border-neutral-200">
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold text-neutral-600 uppercase tracking-wider ml-1">Nama</label>
-                        <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                            <input
-                                type="text"
-                                placeholder="Nama Anda"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                maxLength={50}
-                                disabled={isSubmitting}
-                                className="w-full pl-9 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 transition-all disabled:opacity-60"
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold text-neutral-600 uppercase tracking-wider ml-1">Pesan</label>
-                        <textarea
-                            placeholder="Tuliskan pesan Anda di sini..."
-                            value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            maxLength={500}
-                            disabled={isSubmitting}
-                            rows={4}
-                            className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-neutral-900 resize-none focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 transition-all disabled:opacity-60"
-                            required
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={isSubmitting || !username.trim() || !content.trim()}
-                        className="mt-2 w-full py-3 px-4 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isSubmitting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <>
-                                Kirim Pesan
-                                <Send className="w-4 h-4" />
-                            </>
-                        )}
-                    </button>
-                </form>
             </div>
 
-            {/* RIGHT SIDE: Real-time Feed */}
-            <div className="w-full md:w-2/3 flex flex-col">
-                <div className="flex items-center justify-between border-b border-neutral-100 pb-4 mb-6">
-                    <h3 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
-                        Buku Tamu
-                        <span className="flex h-2 w-2 relative ml-1">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                        </span>
-                    </h3>
-                    <span className="text-sm font-medium px-3 py-1 bg-neutral-100 text-neutral-600 rounded-full">
-                        {comments.length} Pesan
-                    </span>
-                </div>
+            {/* CHAT FEED */}
+            <div className="flex-1 overflow-y-auto px-4 py-6 scroll-smooth z-10 custom-scrollbar">
+                {isLoading ? (
+                    <ChatSkeleton />
+                ) : comments.length === 0 ? (
+                    <div className="flex justify-center items-center h-full">
+                        <div className="bg-[#ffeecd] text-[#54656f] text-sm px-4 py-2 rounded-xl shadow-sm text-center max-w-sm">
+                            🔒 Messages are end-to-end encrypted (just kidding). Send the first message to start the conversation!
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-3">
+                        <AnimatePresence initial={false}>
+                            {comments.map((comment, index) => {
+                                // For visual variation, alternating bubble alignment based on odd/even id hash (pseudo-random but consistent)
+                                // If building a true messaging app, this would check if the currentUser === commentUser. 
+                                // Since it's a guestbook, we simulate others vs "me" by string hash.
+                                const isSelf = comment.username.toLowerCase() === username.trim().toLowerCase() && username.length > 0;
 
-                <div className="relative flex-1 bg-neutral-50/50 rounded-2xl border border-neutral-100 p-4 md:p-6 overflow-hidden min-h-[500px]">
-                    {isLoading ? (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <Loader2 className="w-8 h-8 text-neutral-300 animate-spin" />
-                        </div>
-                    ) : comments.length === 0 ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-neutral-400">
-                            <MessageSquare className="w-12 h-12 mb-3 opacity-20" />
-                            <p>Belum ada pesan. Jadilah yang pertama!</p>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-4 max-h-[600px] overflow-y-auto pr-2 no-scrollbar">
-                            <AnimatePresence initial={false}>
-                                {comments.map((comment, index) => (
+                                return (
                                     <motion.div
                                         key={comment.id}
-                                        initial={{ opacity: 0, y: -20, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        transition={{
-                                            type: "spring",
-                                            stiffness: 300,
-                                            damping: 24,
-                                            delay: Math.min(index * 0.05, 0.5) // cascade intro but cap delay
-                                        }}
-                                        className="bg-white p-4 rounded-2xl shadow-sm border border-neutral-100 group"
+                                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                                        className={`flex w-full ${isSelf ? 'justify-end' : 'justify-start'}`}
                                     >
-                                        <div className="flex items-start gap-4">
-                                            <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-inner ${getAvatarColor(comment.username)}`}>
-                                                {comment.username.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between gap-2 mb-1">
-                                                    <h4 className="font-semibold text-neutral-900 truncate">
-                                                        {comment.username}
-                                                    </h4>
-                                                    <span className="text-xs text-neutral-400 shrink-0 capitalize whitespace-nowrap">
-                                                        {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                                                    </span>
-                                                </div>
-                                                <p className="text-neutral-600 text-sm whitespace-pre-wrap leading-relaxed break-words">
-                                                    {comment.content}
-                                                </p>
+                                        <div
+                                            className={`relative max-w-[85%] sm:max-w-[70%] px-3 pt-2 pb-6 min-w-[120px] rounded-xl shadow-sm
+                                                ${isSelf
+                                                    ? 'bg-[#d9fdd3] rounded-tr-none'
+                                                    : 'bg-white rounded-tl-none'
+                                                }`}
+                                        >
+                                            {/* Chat Tail SVG (Visual Polish) */}
+                                            <svg viewBox="0 0 8 13" width="8" height="13" className={`absolute top-0 ${isSelf ? '-right-2 text-[#d9fdd3]' : '-left-2 text-white'}`}>
+                                                {isSelf
+                                                    ? <path opacity="1" fill="currentColor" d="M5.188 1H0v11.193l6.467-8.625C7.526 2.156 6.958 1 5.188 1z"></path>
+                                                    : <path opacity="1" fill="currentColor" d="M1.533 3.568 8 12.193V1H2.812C1.042 1 .474 2.156 1.533 3.568z"></path>
+                                                }
+                                            </svg>
+
+                                            {/* Username (only show on incoming) */}
+                                            {!isSelf && (
+                                                <h4 className={`text-xs font-bold leading-tight mb-1 ${getNameColor(comment.username)}`}>
+                                                    ~ {comment.username}
+                                                </h4>
+                                            )}
+
+                                            <span className="text-[#111b21] text-[15px] leading-snug whitespace-pre-wrap break-words">
+                                                {comment.content}
+                                            </span>
+
+                                            {/* Timestamp & Read Receipt */}
+                                            <div className="absolute right-2 bottom-1 flex items-center gap-1.5 text-[10px] text-neutral-500">
+                                                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true }).replace('about ', '')}
+                                                {isSelf && <CheckCheck className="w-3.5 h-3.5 text-blue-500" />}
                                             </div>
                                         </div>
                                     </motion.div>
-                                ))}
-                            </AnimatePresence>
-                            <div ref={messagesEndRef} />
-                        </div>
-                    )}
-                </div>
+                                );
+                            })}
+                        </AnimatePresence>
+                        <div ref={messagesEndRef} className="h-4" /> {/* Bottom padding element */}
+                    </div>
+                )}
             </div>
 
+            {/* INPUT FOOTER */}
+            <div className="bg-[#f0f2f5] px-4 py-3 flex items-end gap-3 z-10 shrink-0">
+                <form
+                    onSubmit={handleSubmit}
+                    className="flex-1 flex items-end gap-2 bg-white rounded-2xl px-4 py-2 shadow-sm border border-neutral-200 transition-all focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500"
+                >
+                    <div className="flexflex-col flex-1 pb-1 pt-0.5">
+                        <input
+                            type="text"
+                            placeholder="Your Name"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            maxLength={30}
+                            disabled={isSubmitting}
+                            className="w-full text-xs font-semibold text-neutral-900 border-b border-neutral-100 placeholder:text-neutral-400 bg-transparent focus:outline-none focus:border-emerald-300 pb-1 mb-1 disabled:opacity-50"
+                            required
+                        />
+                        <textarea
+                            placeholder="Type a message..."
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSubmit(e);
+                                }
+                            }}
+                            maxLength={500}
+                            disabled={isSubmitting}
+                            rows={1}
+                            className="w-full text-[15px] bg-transparent text-neutral-900 resize-none focus:outline-none placeholder:text-neutral-500 mt-1 max-h-32 min-h-[24px] disabled:opacity-50"
+                            style={{
+                                height: content ? `${Math.min(100, Math.max(24, content.split('\n').length * 24))}px` : '24px'
+                            }}
+                            required
+                        />
+                    </div>
+                </form>
+
+                {/* Send Button */}
+                <button
+                    type="submit"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting || !username.trim() || !content.trim()}
+                    className="flex-shrink-0 w-12 h-12 bg-emerald-500 hover:bg-emerald-600 rounded-full flex flex-col items-center justify-center text-white shadow-sm transition-all disabled:opacity-50 disabled:scale-95 active:scale-90"
+                >
+                    {isSubmitting ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                        <Send className="w-5 h-5 ml-1" />
+                    )}
+                </button>
+            </div>
+
+            <style jsx>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background-color: rgba(0,0,0,0.15);
+                    border-radius: 20px;
+                }
+            `}</style>
         </div>
     );
 }
